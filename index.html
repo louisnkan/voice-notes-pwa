@@ -1,0 +1,739 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#121212">
+  <meta name="description" content="A private voice-to-text note taking app. Speak and save your thoughts instantly.">
+
+  <title>VoxNote - Voice to Text</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="icon" href="./icon.png" type="image/png">
+  <link rel="apple-touch-icon" href="./icon.png">
+
+  <style>
+    :root {
+      --bg: #121212;
+      --surface: #191b20;
+      --surface-light: #22252d;
+      --accent: #45b8ff;
+      --accent-glow: rgba(69,184,255,.3);
+      --text: #f1f4f8;
+      --muted: #858b98;
+      --red: #ff465c;
+      --border: rgba(255,255,255,.07);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      display: flex;
+      justify-content: center;
+      padding: 25px 18px;
+    }
+
+    button, textarea, select {
+      font: inherit;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 620px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 12px 0 42px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      display: grid;
+      place-items: center;
+      background: rgba(69,184,255,.12);
+      border: 1px solid rgba(69,184,255,.25);
+      color: var(--accent);
+      font-size: 21px;
+    }
+
+    .brand h1 {
+      font-size: 20px;
+      letter-spacing: -.7px;
+    }
+
+    .brand p {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 3px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #4bc991;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    .hero h2 {
+      font-size: clamp(25px, 6vw, 34px);
+      letter-spacing: -1.2px;
+      margin-bottom: 10px;
+    }
+
+    .hero p {
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .mic-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 32px 0 27px;
+    }
+
+    .mic-button {
+      width: 112px;
+      height: 112px;
+      border-radius: 50%;
+      border: 1px solid rgba(69,184,255,.4);
+      background: linear-gradient(145deg, #242b35, #15191f);
+      box-shadow:
+        10px 10px 25px rgba(0,0,0,.55),
+        -5px -5px 18px rgba(255,255,255,.025),
+        0 0 28px var(--accent-glow);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      cursor: pointer;
+      transition: .25s ease;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .mic-button:active {
+      transform: scale(.94);
+    }
+
+    .mic-button svg {
+      width: 43px;
+      height: 43px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .mic-button.recording {
+      color: white;
+      background: linear-gradient(145deg, #ff586b, #c91d38);
+      border-color: #ff6374;
+      box-shadow: 0 0 0 0 rgba(255,70,92,.55);
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(255,70,92,.55);
+      }
+      70% {
+        box-shadow: 0 0 0 22px rgba(255,70,92,0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(255,70,92,0);
+      }
+    }
+
+    .mic-label {
+      margin-top: 19px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .mic-hint {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .language-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 30px;
+    }
+
+    .language-row label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 9px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .note-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 17px;
+      padding: 17px;
+      box-shadow: 8px 8px 24px rgba(0,0,0,.2);
+    }
+
+    .note-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .note-header h3 {
+      font-size: 14px;
+    }
+
+    .saved-label {
+      color: #54c99a;
+      font-size: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      resize: vertical;
+      background: #15171c;
+      border: 1px solid rgba(255,255,255,.055);
+      border-radius: 11px;
+      padding: 16px;
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.8;
+      outline: none;
+    }
+
+    textarea:focus {
+      border-color: rgba(69,184,255,.45);
+    }
+
+    textarea::placeholder {
+      color: #626875;
+    }
+
+    .note-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 10px;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .action-button {
+      padding: 14px;
+      border-radius: 11px;
+      border: 1px solid var(--border);
+      background: var(--surface-light);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: .2s;
+    }
+
+    .action-button:active {
+      transform: scale(.97);
+    }
+
+    .copy-button {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #07131c;
+    }
+
+    .action-button:disabled {
+      opacity: .4;
+      cursor: not-allowed;
+    }
+
+    .install-button {
+      display: none;
+      width: 100%;
+      padding: 13px;
+      margin-top: 18px;
+      border-radius: 11px;
+      border: 1px solid rgba(69,184,255,.4);
+      background: rgba(69,184,255,.1);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .message {
+      text-align: center;
+      min-height: 20px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    footer {
+      text-align: center;
+      color: #656b75;
+      font-size: 10px;
+      margin: 35px 0 10px;
+    }
+
+    @media (max-width: 380px) {
+      .mic-button {
+        width: 100px;
+        height: 100px;
+      }
+
+      textarea {
+        min-height: 190px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+
+    <header>
+      <div class="brand">
+        <div class="brand-icon">✦</div>
+        <div>
+          <h1>VoxNote</h1>
+          <p>YOUR VOICE. YOUR NOTES.</p>
+        </div>
+      </div>
+
+      <div class="status">
+        <span class="status-dot"></span>
+        <span>Private notes</span>
+      </div>
+    </header>
+
+    <section class="hero">
+      <h2>Speak your mind.</h2>
+      <p>Turn your voice into text, capture your thoughts<br>
+      and keep your notes wherever you go.</p>
+    </section>
+
+    <section class="mic-area">
+      <button class="mic-button" id="micButton"
+        aria-label="Start voice recording" aria-pressed="false">
+
+        <svg viewBox="0 0 24 24">
+          <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+          <path d="M5 10v2a7 7 0 0 0 14 0v-2"></path>
+          <path d="M12 19v3"></path>
+          <path d="M8 22h8"></path>
+        </svg>
+      </button>
+
+      <div class="mic-label" id="micLabel">Tap to start speaking</div>
+      <div class="mic-hint" id="micHint">
+        Your microphone is waiting
+      </div>
+    </section>
+
+    <div class="language-row">
+      <label for="language">Recognition language</label>
+      <select id="language">
+        <option value="en-NG" selected>English (Nigeria)</option>
+        <option value="en-GB">English (UK)</option>
+        <option value="en-US">English (US)</option>
+      </select>
+    </div>
+
+    <section class="note-card">
+      <div class="note-header">
+        <h3>My Voice Note</h3>
+        <span class="saved-label" id="savedLabel">● Saved locally</span>
+      </div>
+
+      <textarea id="noteText"
+        placeholder="Your transcribed words will appear here... You can also type directly."
+        spellcheck="true"></textarea>
+
+      <div class="note-footer">
+        <span id="wordCount">0 words</span>
+        <span id="charCount">0 characters</span>
+      </div>
+
+      <div class="actions">
+        <button class="action-button copy-button" id="copyButton">
+          ▣ &nbsp; Copy to Clipboard
+        </button>
+
+        <button class="action-button" id="clearButton">
+          ✕ &nbsp; Clear Note
+        </button>
+      </div>
+
+      <button class="install-button" id="installButton">
+        ↓ &nbsp; Install VoxNote App
+      </button>
+    </section>
+
+    <div class="message" id="message" role="status" aria-live="polite">
+      Your notes are automatically saved on this device.
+    </div>
+
+    <footer>
+      VOXNOTE · SIMPLE. PRIVATE. YOURS.
+    </footer>
+
+  </main>
+
+  <script>
+    // ---------------------------------
+    // ELEMENTS
+    // ---------------------------------
+
+    const micButton = document.getElementById("micButton");
+    const micLabel = document.getElementById("micLabel");
+    const micHint = document.getElementById("micHint");
+    const noteText = document.getElementById("noteText");
+    const copyButton = document.getElementById("copyButton");
+    const clearButton = document.getElementById("clearButton");
+    const language = document.getElementById("language");
+    const message = document.getElementById("message");
+    const wordCount = document.getElementById("wordCount");
+    const charCount = document.getElementById("charCount");
+    const savedLabel = document.getElementById("savedLabel");
+    const installButton = document.getElementById("installButton");
+
+    // ---------------------------------
+    // LOCAL STORAGE
+    // ---------------------------------
+
+    const STORAGE_KEY = "voxnote_saved_note";
+
+    function saveNote() {
+      try {
+        localStorage.setItem(STORAGE_KEY, noteText.value);
+        savedLabel.textContent = "● Saved locally";
+      } catch (error) {
+        savedLabel.textContent = "Save unavailable";
+        showMessage("Could not save this note on your device.");
+      }
+    }
+
+    function loadNote() {
+      try {
+        noteText.value = localStorage.getItem(STORAGE_KEY) || "";
+      } catch (error) {
+        noteText.value = "";
+        showMessage("Local storage is unavailable.");
+      }
+
+      updateCounts();
+    }
+
+    function updateCounts() {
+      const text = noteText.value.trim();
+      const words = text ? text.split(/\s+/).length : 0;
+
+      wordCount.textContent = words + (words === 1 ? " word" : " words");
+      charCount.textContent = noteText.value.length + " characters";
+    }
+
+    noteText.addEventListener("input", () => {
+      saveNote();
+      updateCounts();
+    });
+
+    // ---------------------------------
+    // MESSAGES
+    // ---------------------------------
+
+    function showMessage(text) {
+      message.textContent = text;
+    }
+
+    // ---------------------------------
+    // SPEECH RECOGNITION
+    // ---------------------------------
+
+    const SpeechRecognition =
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition;
+
+    let recognition = null;
+    let isRecording = false;
+    let baseText = "";
+    let recognitionResults = [];
+
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = language.value;
+
+      recognition.onstart = () => {
+        isRecording = true;
+        micButton.classList.add("recording");
+        micButton.setAttribute("aria-pressed", "true");
+        micButton.setAttribute("aria-label", "Stop voice recording");
+
+        micLabel.textContent = "Listening to your voice...";
+        micHint.textContent = "Speak naturally. Your words appear live.";
+
+        showMessage("Recording in progress...");
+      };
+
+      recognition.onresult = (event) => {
+        let finalTranscript = "";
+        let interimTranscript = "";
+
+        for (let i = 0; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + " ";
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+
+        const spokenText = (finalTranscript + interimTranscript).trim();
+
+        noteText.value =
+          baseText +
+          (baseText && spokenText ? " " : "") +
+          spokenText;
+
+        saveNote();
+        updateCounts();
+      };
+
+      recognition.onerror = (event) => {
+        if (event.error === "no-speech") {
+          showMessage("No speech detected. Try speaking again.");
+        } else if (event.error === "not-allowed" ||
+                   event.error === "service-not-allowed") {
+          showMessage("Microphone permission denied. Allow microphone access in Chrome.");
+        } else if (event.error === "audio-capture") {
+          showMessage("No microphone was detected on this device.");
+        } else if (event.error === "network") {
+          showMessage("Speech recognition needs a working internet connection.");
+        } else {
+          showMessage("Recognition error: " + event.error);
+        }
+      };
+
+      recognition.onend = () => {
+        isRecording = false;
+
+        micButton.classList.remove("recording");
+        micButton.setAttribute("aria-pressed", "false");
+        micButton.setAttribute("aria-label", "Start voice recording");
+
+        micLabel.textContent = "Tap to start speaking";
+        micHint.textContent = "Your microphone is waiting";
+
+        saveNote();
+      };
+
+    } else {
+      micButton.disabled = true;
+      micButton.style.opacity = ".4";
+      micLabel.textContent = "Browser not supported";
+
+      micHint.textContent =
+        "Try an updated version of Google Chrome.";
+
+      showMessage(
+        "This browser does not support Web Speech Recognition."
+      );
+    }
+
+    micButton.addEventListener("click", () => {
+      if (!recognition) return;
+
+      if (isRecording) {
+        recognition.stop();
+        showMessage("Stopping recording...");
+        return;
+      }
+
+      if (!window.isSecureContext) {
+        showMessage("Microphone access requires HTTPS. Open this app through Vercel.");
+        return;
+      }
+
+      baseText = noteText.value.trim();
+      recognitionResults = [];
+      recognition.lang = language.value;
+
+      try {
+        recognition.start();
+      } catch (error) {
+        showMessage("Could not start microphone. Please try again.");
+      }
+    });
+
+    // ---------------------------------
+    // COPY TO CLIPBOARD
+    // ---------------------------------
+
+    copyButton.addEventListener("click", async () => {
+      const text = noteText.value.trim();
+
+      if (!text) {
+        showMessage("There is no note to copy yet.");
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(text);
+        showMessage("Your note has been copied successfully!");
+      } catch (error) {
+        // Fallback for browsers without Clipboard API access.
+        noteText.focus();
+        noteText.select();
+
+        try {
+          const copied = document.execCommand("copy");
+          showMessage(
+            copied ? "Note copied successfully!" :
+            "Copy unavailable. Please select and copy manually."
+          );
+        } catch (fallbackError) {
+          showMessage("Copy unavailable. Please select and copy manually.");
+        }
+
+        window.getSelection()?.removeAllRanges();
+      }
+    });
+
+    // ---------------------------------
+    // CLEAR NOTE
+    // ---------------------------------
+
+    clearButton.addEventListener("click", () => {
+      if (!noteText.value.trim()) {
+        showMessage("Your note is already empty.");
+        return;
+      }
+
+      if (isRecording) {
+        recognition.stop();
+      }
+
+      noteText.value = "";
+      saveNote();
+      updateCounts();
+
+      showMessage("Your voice note has been cleared.");
+    });
+
+    // ---------------------------------
+    // PWA INSTALLATION
+    // ---------------------------------
+
+    let deferredInstallPrompt = null;
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+
+      deferredInstallPrompt = event;
+      installButton.style.display = "block";
+    });
+
+    installButton.addEventListener("click", async () => {
+      if (!deferredInstallPrompt) return;
+
+      deferredInstallPrompt.prompt();
+
+      const result = await deferredInstallPrompt.userChoice;
+
+      if (result.outcome === "accepted") {
+        showMessage("VoxNote installation accepted!");
+      } else {
+        showMessage("Installation was cancelled.");
+      }
+
+      deferredInstallPrompt = null;
+      installButton.style.display = "none";
+    });
+
+    window.addEventListener("appinstalled", () => {
+      installButton.style.display = "none";
+      showMessage("VoxNote has been installed successfully!");
+    });
+
+    // ---------------------------------
+    // SERVICE WORKER
+    // ---------------------------------
+
+    if ("serviceWorker" in navigator && window.isSecureContext) {
+      window.addEventListener("load", async () => {
+        try {
+          await navigator.serviceWorker.register("./sw.js");
+        } catch (error) {
+          console.error("Service worker registration failed:", error);
+        }
+      });
+    }
+
+    // ---------------------------------
+    // INITIALIZE APP
+    // ---------------------------------
+
+    loadNote();
+
+  </script>
+</body>
+</html>
