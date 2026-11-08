@@ -1,8 +1,13 @@
-const CACHE_NAME = "voxnote-cache-v1";
+
+const CACHE_NAME = "voxnote-cache-v2";
 
 const APP_FILES = [
+  "./",
   "./index.html",
-  "./manifest.json"
+  "./manifest.json",
+  "./icon.png",
+  "./icon-192.png",
+  "./icon-512.png"
 ];
 
 // INSTALL
